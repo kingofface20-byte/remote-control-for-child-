@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ps" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ډشبورډ</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #1c1e21; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #1f2937; color: #fff; }
+    header button { background: #374151; }
+    main { max-width: 900px; margin: 16px auto; padding: 0 12px; }
+    section { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); overflow-x: auto; }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; text-align: start; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    select, input, button { padding: 8px 10px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    input { flex: 1; min-width: 200px; direction: ltr; }
+    button { background: #2563eb; color: #fff; border: 0; cursor: pointer; }
+    .ltr { direction: ltr; unicode-bidi: plaintext; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 6px; }
+    .on { background: #16a34a; }
+    .off { background: #9ca3af; }
+    #msg { margin-top: 8px; font-size: 14px; min-height: 18px; }
+    .err { color: #b91c1c; }
+    .good { color: #15803d; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>د موبایلونو کنټرول</strong>
+    <button id="logout">وتل</button>
+  </header>
+  <main>
+    <section>
+      <h2>امر ولیږئ</h2>
+      <form id="cmdForm" class="row">
+        <select id="deviceSelect" required></select>
+        <input id="pkg" placeholder="د پیکیج نوم، بیلګه com.whatsapp" required>
+        <button type="submit">لیږل</button>
+      </form>
+      <div id="msg"></div>
+    </section>
+
+    <section>
+      <h2>وسیلې</h2>
+      <table>
+        <thead><tr><th>حالت</th><th>نوم</th><th>پېژندنه</th><th>وروستی ځل</th></tr></thead>
+        <tbody id="devices"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>د امرونو تاریخ</h2>
+      <table>
+        <thead><tr><th>وخت</th><th>وسیله</th><th>پیکیج</th><th>حالت</th><th>پایله</th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
