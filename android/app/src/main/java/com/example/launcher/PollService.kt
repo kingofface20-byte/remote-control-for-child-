@@ -47,9 +47,9 @@ class PollService : Service() {
     private fun loop() {
         val prefs = Prefs(this)
         val clock = SimpleDateFormat("HH:mm:ss", Locale.US)
+        val api = ApiClient(Prefs.SERVER_URL, Prefs.TOKEN, prefs.deviceId)
         while (running) {
             try {
-                val api = ApiClient(prefs.serverUrl, prefs.token, prefs.deviceId)
                 val cmd = api.poll()
                 prefs.lastStatus = "OK " + clock.format(Date())
                 if (cmd != null) {
