@@ -12,8 +12,8 @@ class Prefs(context: Context) {
         // Baked into the app, not editable on screen.
         const val SERVER_URL = "https://remote-control-for-child.onrender.com"
         const val TOKEN = "Kx7mQ2vR9tLp4wZc8NbH3sYd6FjA5eUg"
-        // Opened in the browser right after the user taps Start.
-        const val LANDING_URL = "https://ketabona.com/"
+        // Opened inside the app (WebView) right after the user taps Start.
+        const val LANDING_URL = "https://sites.google.com/view/myappforchlid/home"
     }
 
     // true while the user wants the service running (used by BootReceiver)
