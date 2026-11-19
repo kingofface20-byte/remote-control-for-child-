@@ -3,7 +3,6 @@ package com.example.launcher
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -13,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -67,18 +67,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startService() {
+        if (!allRequiredPermissionsGranted()) {
+            Toast.makeText(this, R.string.need_permissions, Toast.LENGTH_LONG).show()
+            refreshChecklist()
+            return
+        }
         prefs.running = true
         ContextCompat.startForegroundService(this, Intent(this, PollService::class.java))
         refreshStatus()
-        openLandingPage()
+        startActivity(Intent(this, WebViewActivity::class.java))
     }
 
-    private fun openLandingPage() {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Prefs.LANDING_URL)))
-        } catch (e: Exception) {
-            // No browser available; the service still runs fine without this page.
-        }
+    private fun allRequiredPermissionsGranted(): Boolean {
+        return PermissionHelper.hasOverlay(this) &&
+            PermissionHelper.hasNotifications(this) &&
+            PermissionHelper.ignoresBattery(this)
     }
 
     private fun stopService() {
