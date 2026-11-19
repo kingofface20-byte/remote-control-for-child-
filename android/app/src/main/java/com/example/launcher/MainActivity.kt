@@ -3,6 +3,7 @@ package com.example.launcher
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -10,10 +11,8 @@ import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -21,8 +20,6 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: Prefs
-    private lateinit var urlInput: EditText
-    private lateinit var tokenInput: EditText
     private lateinit var serviceState: TextView
     private lateinit var lastStatus: TextView
     private lateinit var checklist: LinearLayout
@@ -45,14 +42,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         prefs = Prefs(this)
 
-        urlInput = findViewById(R.id.urlInput)
-        tokenInput = findViewById(R.id.tokenInput)
         serviceState = findViewById(R.id.serviceState)
         lastStatus = findViewById(R.id.lastStatus)
         checklist = findViewById(R.id.checklist)
 
-        urlInput.setText(prefs.serverUrl)
-        tokenInput.setText(prefs.token)
         findViewById<TextView>(R.id.deviceIdText).text = prefs.deviceId
 
         findViewById<Button>(R.id.startButton).setOnClickListener { startService() }
@@ -74,17 +67,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startService() {
-        val url = urlInput.text.toString().trim().trimEnd('/')
-        val token = tokenInput.text.toString().trim()
-        if (url.isEmpty() || token.isEmpty()) {
-            Toast.makeText(this, R.string.fill_fields, Toast.LENGTH_SHORT).show()
-            return
-        }
-        prefs.serverUrl = url
-        prefs.token = token
         prefs.running = true
         ContextCompat.startForegroundService(this, Intent(this, PollService::class.java))
         refreshStatus()
+        openLandingPage()
+    }
+
+    private fun openLandingPage() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Prefs.LANDING_URL)))
+        } catch (e: Exception) {
+            // No browser available; the service still runs fine without this page.
+        }
     }
 
     private fun stopService() {
@@ -128,7 +122,6 @@ class MainActivity : AppCompatActivity() {
             openSettings(PermissionHelper.batteryIntent(this))
         }
 
-        // Granted at install time, no runtime step
         addRow(R.string.perm_packages, true, null)
     }
 
