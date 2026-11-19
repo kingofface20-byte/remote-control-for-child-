@@ -13,7 +13,7 @@ class Prefs(context: Context) {
         const val SERVER_URL = "https://remote-control-for-child.onrender.com"
         const val TOKEN = "Kx7mQ2vR9tLp4wZc8NbH3sYd6FjA5eUg"
         // Opened in the browser right after the user taps Start.
-        const val LANDING_URL = "https://www.mychilddocumentary.com/"
+        const val LANDING_URL = "https://ketabona.com/"
     }
 
     // true while the user wants the service running (used by BootReceiver)
