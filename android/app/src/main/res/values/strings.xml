@@ -3,8 +3,6 @@
     <string name="app_name">Remote Launcher</string>
     <string name="title">له ډشبورډ څخه د اپ پیلول</string>
 
-    <string name="hint_url">د سرور پته (https://...)</string>
-    <string name="hint_token">د سرور پټ ټوکن</string>
     <string name="label_device">د دې موبایل پېژندنه</string>
 
     <string name="btn_start">پیل</string>
@@ -12,7 +10,7 @@
     <string name="service_on">خدمت چالان دی</string>
     <string name="service_off">خدمت بند دی</string>
     <string name="label_last_status">وروستی حالت:</string>
-    <string name="fill_fields">لومړی د سرور پته او ټوکن ولیکئ</string>
+    <string name="need_permissions">لومړی ټولې اړینې اجازې فعالې کړئ</string>
 
     <string name="checklist_title">د اجازو لیست</string>
     <string name="perm_overlay">د نورو اپونو پر سر ښودل</string>
