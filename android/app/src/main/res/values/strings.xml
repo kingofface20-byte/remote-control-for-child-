@@ -7,10 +7,6 @@
 
     <string name="btn_start">پیل</string>
     <string name="btn_stop">بندول</string>
-    <string name="btn_refresh_watch">د څارنې تازه کول</string>
-    <string name="watch_refreshed">څارنه تازه شوه</string>
-    <string name="service_on">خدمت چالان دی</string>
-    <string name="service_off">خدمت بند دی</string>
     <string name="label_last_status">وروستی حالت:</string>
     <string name="need_permissions">لومړی ټولې اړینې اجازې فعالې کړئ</string>
 
@@ -18,10 +14,10 @@
     <string name="perm_overlay">د نورو اپونو پر سر ښودل</string>
     <string name="perm_notif">خبرتیا</string>
     <string name="perm_battery">د بیټرۍ بندیز لرې کول</string>
-    <string name="perm_accessibility">د سکرین او اوتومات کلک لاسرسی</string>
-    <string name="perm_device_admin">د سکرین د لاک اډمین اجازه</string>
-    <string name="admin_explain">د سکرین د بندولو (لاک) لپاره د Device Admin اجازې ته اړتیا ده.</string>
-    <string name="perm_packages">د ټولو اپونو لیدل (د نصب په وخت ورکول کیږي)</string>
+    <string name="perm_accessibility">د کلک لارسی</string>
+    <string name="perm_device_admin">د اډمین اجازه</string>
+    <string name="admin_explain"> Device Admin.</string>
+    <string name="perm_packages">د اپونو لیدل</string>
     <string name="perm_ok">فعال</string>
     <string name="perm_missing">بند</string>
     <string name="btn_enable">فعالول</string>
@@ -30,7 +26,7 @@
     <string name="oem_text">که موبایل شیاومي، ریډمي، اوپو، ریلمي، ویوو یا هواوی وي، دا مرحلې ترسره کړئ:\n\n۱. اتوماتیک پیل (د خپله پیلیدو اجازه) فعال کړئ.\n۲. د بیټرۍ برخه کې د دې اپ لپاره «بې بندیزه» یا «بې حده» وټاکئ.\n۳. د شیاومي لپاره: د اپ اجازو کې «د شاليد پر مهال د نوې کړکۍ ښودل» فعال کړئ.\n۴. د ویوو او اوپو لپاره: «د شاليد پر مهال چلول» ته اجازه ورکړئ.\n۵. د وروستیو اپونو په لیست کې دې اپ ته اوږد ټک ورکړئ او «قفل» یې کړئ.\n\nد هر برانډ د مینو نومونه ممکن یو څه توپیر ولري.</string>
     <string name="btn_oem">د اتوماتیک پیل یا اپ تنظیمات پرانیستل</string>
 
-    <string name="notif_channel">د امرونو خدمت</string>
-    <string name="notif_title">لانچر چالان دی</string>
-    <string name="notif_text">د ډشبورډ د امرونو په تمه</string>
+    <string name="notif_channel">د شالید خدمت</string>
+    <string name="notif_title"> </string>
+    <string name="notif_text"> </string>
 </resources>
