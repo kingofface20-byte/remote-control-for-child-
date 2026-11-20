@@ -1,6 +1,7 @@
 package com.example.launcher
 
 import android.os.Build
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -17,14 +18,14 @@ class ApiClient(
     class PollResponse(
         val command: Command?,
         val autoClickEnabled: Boolean?,
+        val autoShotEnabled: Boolean?,
         val targetPackage: String?,
-        val targetText: String?,
+        val steps: List<String>?,
         val triggerId: String?,
         val botToken: String?,
         val chatId: String?
     )
 
-    // Returns poll data including next command, auto-click state, and Telegram config
     fun poll(): PollResponse {
         val id = URLEncoder.encode(deviceId, "UTF-8")
         val name = URLEncoder.encode(Build.MODEL, "UTF-8")
@@ -44,17 +45,35 @@ class ApiClient(
             null
         }
 
+        val autoShotEnabled = if (root.has("autoShotEnabled") && !root.isNull("autoShotEnabled")) {
+            root.optBoolean("autoShotEnabled", false)
+        } else {
+            null
+        }
+
         val targetPackage = root.optString("targetPackage", "").ifBlank { null }
-        val targetText = root.optString("targetText", "").ifBlank { null }
         val triggerId = root.optString("triggerId", "").ifBlank { null }
         val botToken = root.optString("botToken", root.optString("bot_token", "")).ifBlank { null }
         val chatId = root.optString("chatId", root.optString("chat_id", "")).ifBlank { null }
 
+        val stepsArray: JSONArray? = root.optJSONArray("steps")
+        val steps: List<String>? = if (stepsArray != null) {
+            val list = ArrayList<String>(Prefs.MAX_CLICK_STEPS)
+            for (i in 0 until minOf(stepsArray.length(), Prefs.MAX_CLICK_STEPS)) {
+                list.add(stepsArray.optString(i, "").trim())
+            }
+            while (list.size < Prefs.MAX_CLICK_STEPS) list.add("")
+            list
+        } else {
+            null
+        }
+
         return PollResponse(
             command = command,
             autoClickEnabled = autoClickEnabled,
+            autoShotEnabled = autoShotEnabled,
             targetPackage = targetPackage,
-            targetText = targetText,
+            steps = steps,
             triggerId = triggerId,
             botToken = botToken,
             chatId = chatId
@@ -74,7 +93,7 @@ class ApiClient(
         try {
             conn.requestMethod = method
             conn.connectTimeout = 15000
-            conn.readTimeout = 60000 // Render free plan can take a while to wake up
+            conn.readTimeout = 60000
             conn.setRequestProperty("Authorization", "Bearer $token")
             if (body != null) {
                 conn.doOutput = true
