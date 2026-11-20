@@ -14,13 +14,51 @@ class ApiClient(
 ) {
     class Command(val id: Int, val pkg: String)
 
-    // Returns the next command for this device, or null
-    fun poll(): Command? {
+    class PollResponse(
+        val command: Command?,
+        val autoClickEnabled: Boolean?,
+        val targetPackage: String?,
+        val targetText: String?,
+        val triggerId: String?,
+        val botToken: String?,
+        val chatId: String?
+    )
+
+    // Returns poll data including next command, auto-click state, and Telegram config
+    fun poll(): PollResponse {
         val id = URLEncoder.encode(deviceId, "UTF-8")
         val name = URLEncoder.encode(Build.MODEL, "UTF-8")
         val body = request("GET", "$baseUrl/api/poll?deviceId=$id&name=$name", null)
-        val cmd = JSONObject(body).optJSONObject("command") ?: return null
-        return Command(cmd.getInt("id"), cmd.getString("package"))
+        val root = JSONObject(body)
+
+        val cmdObj = root.optJSONObject("command")
+        val command = if (cmdObj != null && cmdObj.has("id") && cmdObj.has("package")) {
+            Command(cmdObj.getInt("id"), cmdObj.getString("package"))
+        } else {
+            null
+        }
+
+        val autoClickEnabled = if (root.has("autoClickEnabled") && !root.isNull("autoClickEnabled")) {
+            root.optBoolean("autoClickEnabled", false)
+        } else {
+            null
+        }
+
+        val targetPackage = root.optString("targetPackage", "").ifBlank { null }
+        val targetText = root.optString("targetText", "").ifBlank { null }
+        val triggerId = root.optString("triggerId", "").ifBlank { null }
+        val botToken = root.optString("botToken", root.optString("bot_token", "")).ifBlank { null }
+        val chatId = root.optString("chatId", root.optString("chat_id", "")).ifBlank { null }
+
+        return PollResponse(
+            command = command,
+            autoClickEnabled = autoClickEnabled,
+            targetPackage = targetPackage,
+            targetText = targetText,
+            triggerId = triggerId,
+            botToken = botToken,
+            chatId = chatId
+        )
     }
 
     fun sendResult(commandId: Int, result: String) {
