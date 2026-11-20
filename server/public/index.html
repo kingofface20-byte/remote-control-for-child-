@@ -13,15 +13,17 @@
     h2 { margin: 0 0 10px; font-size: 17px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; text-align: start; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     select, input, button { padding: 8px 10px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
-    input { flex: 1; min-width: 200px; direction: ltr; }
+    input { flex: 1; min-width: 180px; direction: ltr; }
     button { background: #2563eb; color: #fff; border: 0; cursor: pointer; }
+    button.warn { background: #dc2626; }
+    button.sec { background: #4b5563; }
     .ltr { direction: ltr; unicode-bidi: plaintext; }
     .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 6px; }
     .on { background: #16a34a; }
     .off { background: #9ca3af; }
-    #msg { margin-top: 8px; font-size: 14px; min-height: 18px; }
+    #msg, #acMsg { margin-top: 8px; font-size: 14px; min-height: 18px; }
     .err { color: #b91c1c; }
     .good { color: #15803d; }
   </style>
@@ -38,8 +40,20 @@
         <select id="deviceSelect" required></select>
         <input id="pkg" placeholder="د پیکیج نوم، بیلګه com.whatsapp" required>
         <button type="submit">لیږل</button>
+        <button type="button" id="screenOffBtn" class="warn">سکرین بندول (Lock)</button>
       </form>
       <div id="msg"></div>
+    </section>
+
+    <section>
+      <h2>اوتومات کلکر (واتساپ)</h2>
+      <div class="row">
+        <input id="acPkg" value="com.whatsapp" placeholder="د پیکیج نوم (com.whatsapp)">
+        <input id="acText" placeholder="د هدف متن یا چټ نوم (اختیاري)">
+        <button type="button" id="acEnableBtn">چالان (true)</button>
+        <button type="button" id="acDisableBtn" class="sec">بند (false)</button>
+      </div>
+      <div id="acMsg"></div>
     </section>
 
     <section>
