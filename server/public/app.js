@@ -9,7 +9,7 @@ const RESULT_TEXT = {
 const STATUS_TEXT = { pending: 'په تمه', sent: 'موبایل ته ورسید', done: 'پای ته ورسید' };
 
 const $ = (id) => document.getElementById(id);
-let acInitialized = false;
+let configInitialized = false;
 
 async function api(path, options = {}) {
   const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
@@ -31,6 +31,21 @@ function cell(text, className) {
 
 function fmt(ts) {
   return ts ? new Date(ts).toLocaleString() : '-';
+}
+
+function readStepsInputs() {
+  const out = [];
+  for (let i = 1; i <= 10; i++) {
+    out.push(($('step' + i).value || '').trim());
+  }
+  return out;
+}
+
+function writeStepsInputs(steps) {
+  const arr = Array.isArray(steps) ? steps : [];
+  for (let i = 1; i <= 10; i++) {
+    $('step' + i).value = typeof arr[i - 1] === 'string' ? arr[i - 1] : '';
+  }
 }
 
 async function loadDevices() {
@@ -75,23 +90,36 @@ async function loadHistory() {
   }
 }
 
-async function loadAutoClick() {
-  const ac = await api('/api/autoclick');
-  if (!acInitialized) {
+function renderFeatureStates(data) {
+  const ac = data.autoClick || {};
+  const shot = data.autoShot || {};
+
+  if (!configInitialized) {
     if (ac.targetPackage) $('acPkg').value = ac.targetPackage;
-    if (ac.targetText !== undefined) $('acText').value = ac.targetText;
-    acInitialized = true;
+    writeStepsInputs(ac.steps);
+    configInitialized = true;
   }
+
   const acMsg = $('acMsg');
   acMsg.className = ac.enabled ? 'good' : '';
   acMsg.textContent =
-    'اوسنی حالت: ' + (ac.enabled ? 'چالان (true)' : 'بند (false)') +
+    'کلکر حالت: ' + (ac.enabled ? 'چالان (true)' : 'بند (false)') +
     ' | پیکیج: ' + (ac.targetPackage || 'com.whatsapp');
+
+  const shotMsg = $('shotMsg');
+  shotMsg.className = shot.enabled ? 'good' : '';
+  shotMsg.textContent =
+    '۲ ثانییز عکس اخیستنه: ' + (shot.enabled ? 'چالان (true)' : 'بند (false)');
+}
+
+async function loadFeatureConfig() {
+  const data = await api('/api/autoclick');
+  renderFeatureStates(data);
 }
 
 async function refresh() {
   try {
-    await Promise.all([loadDevices(), loadHistory(), loadAutoClick()]);
+    await Promise.all([loadDevices(), loadHistory(), loadFeatureConfig()]);
   } catch (e) {
     // login redirect is handled in api()
   }
@@ -130,23 +158,42 @@ async function updateAutoClick(enabled) {
   acMsg.textContent = '';
   try {
     const targetPackage = ($('acPkg').value || 'com.whatsapp').trim();
-    const targetText = ($('acText').value || '').trim();
+    const steps = readStepsInputs();
     const updated = await api('/api/autoclick', {
       method: 'POST',
-      body: JSON.stringify({ enabled, targetPackage, targetText }),
+      body: JSON.stringify({
+        autoClick: { enabled, targetPackage, steps },
+      }),
     });
-    acMsg.className = updated.enabled ? 'good' : '';
-    acMsg.textContent =
-      'حالت تازه شو: ' + (updated.enabled ? 'چالان (true)' : 'بند (false)') +
-      ' | پیکیج: ' + updated.targetPackage;
+    renderFeatureStates(updated);
   } catch (err) {
     acMsg.className = 'err';
     acMsg.textContent = 'تېروتنه: ' + err.message;
   }
 }
 
+async function updateAutoShot(enabled) {
+  const shotMsg = $('shotMsg');
+  shotMsg.className = '';
+  shotMsg.textContent = '';
+  try {
+    const updated = await api('/api/autoclick', {
+      method: 'POST',
+      body: JSON.stringify({
+        autoShot: { enabled },
+      }),
+    });
+    renderFeatureStates(updated);
+  } catch (err) {
+    shotMsg.className = 'err';
+    shotMsg.textContent = 'تېروتنه: ' + err.message;
+  }
+}
+
 $('acEnableBtn').addEventListener('click', () => updateAutoClick(true));
 $('acDisableBtn').addEventListener('click', () => updateAutoClick(false));
+$('shotEnableBtn').addEventListener('click', () => updateAutoShot(true));
+$('shotDisableBtn').addEventListener('click', () => updateAutoShot(false));
 
 $('logout').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
