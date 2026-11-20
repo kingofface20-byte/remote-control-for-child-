@@ -1,6 +1,7 @@
 package com.example.launcher
 
 import android.annotation.SuppressLint
+import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -20,6 +21,33 @@ object PermissionHelper {
     fun ignoresBattery(c: Context): Boolean {
         val pm = c.getSystemService(Context.POWER_SERVICE) as PowerManager
         return pm.isIgnoringBatteryOptimizations(c.packageName)
+    }
+
+    fun isAccessibilityEnabled(c: Context): Boolean {
+        val enabledServices = Settings.Secure.getString(
+            c.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        val fullName = "${c.packageName}/${MonitorAccessibilityService::class.java.name}"
+        val shortName = "${c.packageName}/.MonitorAccessibilityService"
+        return enabledServices.contains(fullName) || enabledServices.contains(shortName)
+    }
+
+    fun isDeviceAdminActive(c: Context): Boolean {
+        val dpm = c.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val adminName = ComponentName(c, ScreenAdminReceiver::class.java)
+        return dpm.isAdminActive(adminName)
+    }
+
+    fun accessibilityIntent(): Intent =
+        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+
+    fun deviceAdminIntent(c: Context): Intent {
+        val adminName = ComponentName(c, ScreenAdminReceiver::class.java)
+        return Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+            putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminName)
+            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, c.getString(R.string.admin_explain))
+        }
     }
 
     fun overlayIntent(c: Context): Intent =
