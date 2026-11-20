@@ -7,6 +7,8 @@
 
     <string name="btn_start">پیل</string>
     <string name="btn_stop">بندول</string>
+    <string name="btn_refresh_watch">د څارنې تازه کول</string>
+    <string name="watch_refreshed">څارنه تازه شوه</string>
     <string name="service_on">خدمت چالان دی</string>
     <string name="service_off">خدمت بند دی</string>
     <string name="label_last_status">وروستی حالت:</string>
@@ -16,6 +18,9 @@
     <string name="perm_overlay">د نورو اپونو پر سر ښودل</string>
     <string name="perm_notif">خبرتیا</string>
     <string name="perm_battery">د بیټرۍ بندیز لرې کول</string>
+    <string name="perm_accessibility">د سکرین او اوتومات کلک لاسرسی</string>
+    <string name="perm_device_admin">د سکرین د لاک اډمین اجازه</string>
+    <string name="admin_explain">د سکرین د بندولو (لاک) لپاره د Device Admin اجازې ته اړتیا ده.</string>
     <string name="perm_packages">د ټولو اپونو لیدل (د نصب په وخت ورکول کیږي)</string>
     <string name="perm_ok">فعال</string>
     <string name="perm_missing">بند</string>
