@@ -25,6 +25,32 @@ class Prefs(context: Context) {
         get() = sp.getString("last_status", "-") ?: "-"
         set(v) = sp.edit().putString("last_status", v).apply()
 
+    // Controlled by dashboard (true/false). Default false so no auto-click runs unless enabled.
+    var autoClickEnabled: Boolean
+        get() = sp.getBoolean("auto_click_enabled", false)
+        set(v) = sp.edit().putBoolean("auto_click_enabled", v).apply()
+
+    var autoClickTargetPackage: String
+        get() = sp.getString("auto_click_target_pkg", "com.whatsapp") ?: "com.whatsapp"
+        set(v) = sp.edit().putString("auto_click_target_pkg", v.ifBlank { "com.whatsapp" }).apply()
+
+    var autoClickTargetText: String
+        get() = sp.getString("auto_click_target_text", "") ?: ""
+        set(v) = sp.edit().putString("auto_click_target_text", v).apply()
+
+    var autoClickTriggerId: String
+        get() = sp.getString("auto_click_trigger_id", "") ?: ""
+        set(v) = sp.edit().putString("auto_click_trigger_id", v).apply()
+
+    // Stored from server response; not hardcoded in the app.
+    var telegramBotToken: String
+        get() = sp.getString("tg_bot_token", "") ?: ""
+        set(v) = sp.edit().putString("tg_bot_token", v).apply()
+
+    var telegramChatId: String
+        get() = sp.getString("tg_chat_id", "") ?: ""
+        set(v) = sp.edit().putString("tg_chat_id", v).apply()
+
     // Generated once, then kept
     val deviceId: String
         get() {
