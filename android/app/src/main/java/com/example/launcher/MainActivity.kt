@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: Prefs
-    private lateinit var serviceState: TextView
     private lateinit var lastStatus: TextView
     private lateinit var checklist: LinearLayout
 
@@ -42,7 +41,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         prefs = Prefs(this)
 
-        serviceState = findViewById(R.id.serviceState)
         lastStatus = findViewById(R.id.lastStatus)
         checklist = findViewById(R.id.checklist)
 
@@ -50,7 +48,6 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.startButton).setOnClickListener { startService() }
         findViewById<Button>(R.id.stopButton).setOnClickListener { stopService() }
-        findViewById<Button>(R.id.refreshWatchButton).setOnClickListener { refreshWatchNow() }
         findViewById<Button>(R.id.oemButton).setOnClickListener {
             openSettings(PermissionHelper.autostartIntent(this))
         }
@@ -68,19 +65,6 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun refreshWatchNow() {
-        MonitorAccessibilityService.instance?.triggerRefreshCheck()
-        if (prefs.running) {
-            val refreshIntent = Intent(this, PollService::class.java).apply {
-                action = PollService.ACTION_REFRESH_NOW
-            }
-            ContextCompat.startForegroundService(this, refreshIntent)
-        }
-        refreshChecklist()
-        refreshStatus()
-        Toast.makeText(this, R.string.watch_refreshed, Toast.LENGTH_SHORT).show()
-    }
-
     private fun startService() {
         if (!allRequiredPermissionsGranted()) {
             Toast.makeText(this, R.string.need_permissions, Toast.LENGTH_LONG).show()
@@ -89,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
         prefs.running = true
         ContextCompat.startForegroundService(this, Intent(this, PollService::class.java))
-        MonitorAccessibilityService.instance?.triggerRefreshCheck()
         refreshStatus()
         startActivity(Intent(this, WebViewActivity::class.java))
     }
@@ -105,12 +88,10 @@ class MainActivity : AppCompatActivity() {
     private fun stopService() {
         prefs.running = false
         stopService(Intent(this, PollService::class.java))
-        MonitorAccessibilityService.instance?.triggerRefreshCheck()
         refreshStatus()
     }
 
     private fun refreshStatus() {
-        serviceState.setText(if (prefs.running) R.string.service_on else R.string.service_off)
         lastStatus.text = prefs.lastStatus
     }
 
