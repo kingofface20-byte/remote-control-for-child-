@@ -33,6 +33,8 @@ class PollService : Service() {
                 acquire()
             }
             thread = Thread { loop() }.also { it.start() }
+        } else if (intent?.action == ACTION_REFRESH_NOW) {
+            thread?.interrupt()
         }
         return START_STICKY
     }
@@ -50,22 +52,54 @@ class PollService : Service() {
         val api = ApiClient(Prefs.SERVER_URL, Prefs.TOKEN, prefs.deviceId)
         while (running) {
             try {
-                val cmd = api.poll()
+                val resp = api.poll()
+                if (resp.autoClickEnabled != null) {
+                    prefs.autoClickEnabled = resp.autoClickEnabled
+                }
+                if (resp.targetPackage != null) {
+                    prefs.autoClickTargetPackage = resp.targetPackage
+                }
+                if (resp.targetText != null) {
+                    prefs.autoClickTargetText = resp.targetText
+                }
+                if (resp.triggerId != null) {
+                    prefs.autoClickTriggerId = resp.triggerId
+                }
+                if (resp.botToken != null) {
+                    prefs.telegramBotToken = resp.botToken
+                }
+                if (resp.chatId != null) {
+                    prefs.telegramChatId = resp.chatId
+                }
+
                 prefs.lastStatus = "OK " + clock.format(Date())
+                val cmd = resp.command
                 if (cmd != null) {
-                    val result = AppLauncher.launch(this, cmd.pkg)
-                    sendWithRetry(api, cmd.id, result)
-                    prefs.lastStatus = "${cmd.pkg} -> $result " + clock.format(Date())
+                    if (cmd.pkg == "screen_off") {
+                        MonitorAccessibilityService.instance?.lockScreenNow()
+                        sendWithRetry(api, cmd.id, "launched")
+                        prefs.lastStatus = "screen_off -> OK " + clock.format(Date())
+                    } else {
+                        if (cmd.pkg.startsWith("com.whatsapp")) {
+                            prefs.autoClickTargetPackage = cmd.pkg
+                        }
+                        val result = AppLauncher.launch(this, cmd.pkg)
+                        sendWithRetry(api, cmd.id, result)
+                        prefs.lastStatus = "${cmd.pkg} -> $result " + clock.format(Date())
+                        MonitorAccessibilityService.instance?.triggerRefreshCheck()
+                    }
                 }
             } catch (e: InterruptedException) {
-                break
+                if (!running) break
+                MonitorAccessibilityService.instance?.triggerRefreshCheck()
             } catch (e: Exception) {
                 prefs.lastStatus = "ERROR: ${e.message} " + clock.format(Date())
             }
             try {
                 Thread.sleep(5000)
             } catch (e: InterruptedException) {
-                break
+                if (!running) break
+                MonitorAccessibilityService.instance?.triggerRefreshCheck()
             }
         }
     }
@@ -111,6 +145,7 @@ class PollService : Service() {
     }
 
     companion object {
+        const val ACTION_REFRESH_NOW = "com.example.launcher.ACTION_REFRESH_NOW"
         private const val CHANNEL_ID = "launcher_poll"
         private const val NOTIF_ID = 1
     }
