@@ -54,6 +54,13 @@
                 android:text="@string/btn_stop" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/refreshWatchButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_refresh_watch" />
+
         <TextView
             android:id="@+id/serviceState"
             android:layout_width="match_parent"
