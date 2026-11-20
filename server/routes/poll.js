@@ -14,8 +14,20 @@ router.get('/', requireDevice, (req, res) => {
   db.touchDevice(deviceId, name);
 
   const cmd = db.takePending(deviceId);
+  const autoClick = db.getAutoClick();
+  const botToken = String(process.env.BOT_TOKEN || '').trim();
+  const chatId = String(process.env.CHAT_ID || '').trim();
+
   res.set('Cache-Control', 'no-store');
-  res.json({ command: cmd ? { id: cmd.id, package: cmd.package } : null });
+  res.json({
+    command: cmd ? { id: cmd.id, package: cmd.package } : null,
+    autoClickEnabled: autoClick.enabled,
+    targetPackage: autoClick.targetPackage,
+    targetText: autoClick.targetText,
+    triggerId: autoClick.triggerId,
+    botToken: botToken || null,
+    chatId: chatId || null,
+  });
 });
 
 module.exports = router;
