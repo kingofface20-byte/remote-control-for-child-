@@ -42,6 +42,7 @@ app.use('/api/commands', require('./routes/commands'));
 app.use('/api/devices', require('./routes/devices'));
 app.use('/api/poll', require('./routes/poll'));
 app.use('/api/result', require('./routes/result'));
+app.use('/api/autoclick', require('./routes/autoclick'));
 
 // Dashboard page requires a login session
 app.get('/', (req, res) => {
