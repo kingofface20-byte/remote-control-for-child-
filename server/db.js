@@ -1,12 +1,20 @@
-// Tiny JSON-file store. On Render free plan the disk is not persistent,
-// so history is lost on restart; devices re-register on their next poll.
 const fs = require('fs');
 const path = require('path');
 
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'db.json');
 const MAX_COMMANDS = 200;
-const PENDING_EXPIRE_MS = 120 * 1000; // phone never picked it up
-const SENT_EXPIRE_MS = 60 * 1000;     // phone picked it up but never reported
+const MAX_STEPS = 10;
+const PENDING_EXPIRE_MS = 120 * 1000;
+const SENT_EXPIRE_MS = 60 * 1000;
+
+function normalizeSteps(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  const out = [];
+  for (let i = 0; i < MAX_STEPS; i++) {
+    out.push(typeof arr[i] === 'string' ? arr[i].trim() : '');
+  }
+  return out;
+}
 
 let state = {
   devices: {},
@@ -14,8 +22,11 @@ let state = {
   autoClick: {
     enabled: false,
     targetPackage: 'com.whatsapp',
-    targetText: '',
+    steps: Array(MAX_STEPS).fill(''),
     triggerId: '',
+  },
+  autoShot: {
+    enabled: false,
   },
 };
 let nextId = 1;
@@ -24,28 +35,41 @@ let saveTimer = null;
 function load() {
   try {
     const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const legacyText =
+      parsed.autoClick && typeof parsed.autoClick.targetText === 'string'
+        ? parsed.autoClick.targetText.trim()
+        : '';
+    const rawSteps =
+      parsed.autoClick && Array.isArray(parsed.autoClick.steps)
+        ? parsed.autoClick.steps
+        : legacyText
+          ? [legacyText]
+          : [];
+
     state = {
       devices: parsed.devices && typeof parsed.devices === 'object' ? parsed.devices : {},
       commands: Array.isArray(parsed.commands) ? parsed.commands : [],
       autoClick: {
         enabled: Boolean(parsed.autoClick && parsed.autoClick.enabled),
         targetPackage:
-          parsed.autoClick && typeof parsed.autoClick.targetPackage === 'string' && parsed.autoClick.targetPackage.trim()
+          parsed.autoClick &&
+          typeof parsed.autoClick.targetPackage === 'string' &&
+          parsed.autoClick.targetPackage.trim()
             ? parsed.autoClick.targetPackage.trim()
             : 'com.whatsapp',
-        targetText:
-          parsed.autoClick && typeof parsed.autoClick.targetText === 'string'
-            ? parsed.autoClick.targetText
-            : '',
+        steps: normalizeSteps(rawSteps),
         triggerId:
           parsed.autoClick && typeof parsed.autoClick.triggerId === 'string'
             ? parsed.autoClick.triggerId
             : '',
       },
+      autoShot: {
+        enabled: Boolean(parsed.autoShot && parsed.autoShot.enabled),
+      },
     };
     nextId = state.commands.reduce((m, c) => Math.max(m, Number(c.id) || 0), 0) + 1;
   } catch (e) {
-    // first run or unreadable file: start with defaults
+    // start with defaults
   }
 }
 
@@ -144,32 +168,48 @@ function listCommands(limit) {
 }
 
 function getAutoClick() {
-  return { ...state.autoClick };
+  return {
+    enabled: Boolean(state.autoClick.enabled),
+    targetPackage: state.autoClick.targetPackage || 'com.whatsapp',
+    steps: normalizeSteps(state.autoClick.steps),
+    triggerId: state.autoClick.triggerId || '',
+  };
 }
 
-function setAutoClick({ enabled, targetPackage, targetText }) {
-  const prevEnabled = Boolean(state.autoClick.enabled);
-  const nextEnabled = typeof enabled === 'boolean' ? enabled : prevEnabled;
+function setAutoClick({ enabled, targetPackage, steps }) {
+  const nextEnabled = typeof enabled === 'boolean' ? enabled : Boolean(state.autoClick.enabled);
   const nextPkg =
     typeof targetPackage === 'string' && targetPackage.trim()
       ? targetPackage.trim()
       : state.autoClick.targetPackage || 'com.whatsapp';
-  const nextText =
-    typeof targetText === 'string' ? targetText.trim() : state.autoClick.targetText || '';
+  const nextSteps = Array.isArray(steps)
+    ? normalizeSteps(steps)
+    : normalizeSteps(state.autoClick.steps);
 
-  let nextTriggerId = state.autoClick.triggerId || '';
-  if (nextEnabled) {
-    nextTriggerId = String(Date.now());
-  }
+  const nextTriggerId = nextEnabled ? String(Date.now()) : state.autoClick.triggerId || '';
 
   state.autoClick = {
     enabled: nextEnabled,
     targetPackage: nextPkg,
-    targetText: nextText,
+    steps: nextSteps,
     triggerId: nextTriggerId,
   };
   save();
-  return { ...state.autoClick };
+  return getAutoClick();
+}
+
+function getAutoShot() {
+  return {
+    enabled: Boolean(state.autoShot && state.autoShot.enabled),
+  };
+}
+
+function setAutoShot(enabled) {
+  state.autoShot = {
+    enabled: Boolean(enabled),
+  };
+  save();
+  return getAutoShot();
 }
 
 module.exports = {
@@ -183,4 +223,6 @@ module.exports = {
   listCommands,
   getAutoClick,
   setAutoClick,
+  getAutoShot,
+  setAutoShot,
 };
