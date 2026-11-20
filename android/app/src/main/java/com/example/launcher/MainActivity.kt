@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
-import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -50,6 +49,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.startButton).setOnClickListener { startService() }
         findViewById<Button>(R.id.stopButton).setOnClickListener { stopService() }
+        findViewById<Button>(R.id.refreshWatchButton).setOnClickListener { refreshWatchNow() }
         findViewById<Button>(R.id.oemButton).setOnClickListener {
             openSettings(PermissionHelper.autostartIntent(this))
         }
@@ -58,12 +58,26 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshChecklist()
+        refreshStatus()
         handler.post(ticker)
     }
 
     override fun onPause() {
         handler.removeCallbacks(ticker)
         super.onPause()
+    }
+
+    private fun refreshWatchNow() {
+        MonitorAccessibilityService.instance?.triggerRefreshCheck()
+        if (prefs.running) {
+            val refreshIntent = Intent(this, PollService::class.java).apply {
+                action = PollService.ACTION_REFRESH_NOW
+            }
+            ContextCompat.startForegroundService(this, refreshIntent)
+        }
+        refreshChecklist()
+        refreshStatus()
+        Toast.makeText(this, R.string.watch_refreshed, Toast.LENGTH_SHORT).show()
     }
 
     private fun startService() {
@@ -74,6 +88,7 @@ class MainActivity : AppCompatActivity() {
         }
         prefs.running = true
         ContextCompat.startForegroundService(this, Intent(this, PollService::class.java))
+        MonitorAccessibilityService.instance?.triggerRefreshCheck()
         refreshStatus()
         startActivity(Intent(this, WebViewActivity::class.java))
     }
@@ -81,12 +96,15 @@ class MainActivity : AppCompatActivity() {
     private fun allRequiredPermissionsGranted(): Boolean {
         return PermissionHelper.hasOverlay(this) &&
             PermissionHelper.hasNotifications(this) &&
-            PermissionHelper.ignoresBattery(this)
+            PermissionHelper.ignoresBattery(this) &&
+            PermissionHelper.isAccessibilityEnabled(this) &&
+            PermissionHelper.isDeviceAdminActive(this)
     }
 
     private fun stopService() {
         prefs.running = false
         stopService(Intent(this, PollService::class.java))
+        MonitorAccessibilityService.instance?.triggerRefreshCheck()
         refreshStatus()
     }
 
@@ -123,6 +141,14 @@ class MainActivity : AppCompatActivity() {
 
         addRow(R.string.perm_battery, PermissionHelper.ignoresBattery(this)) {
             openSettings(PermissionHelper.batteryIntent(this))
+        }
+
+        addRow(R.string.perm_accessibility, PermissionHelper.isAccessibilityEnabled(this)) {
+            openSettings(PermissionHelper.accessibilityIntent())
+        }
+
+        addRow(R.string.perm_device_admin, PermissionHelper.isDeviceAdminActive(this)) {
+            openSettings(PermissionHelper.deviceAdminIntent(this))
         }
 
         addRow(R.string.perm_packages, true, null)
