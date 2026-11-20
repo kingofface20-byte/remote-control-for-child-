@@ -33,8 +33,6 @@ class PollService : Service() {
                 acquire()
             }
             thread = Thread { loop() }.also { it.start() }
-        } else if (intent?.action == ACTION_REFRESH_NOW) {
-            thread?.interrupt()
         }
         return START_STICKY
     }
@@ -56,11 +54,14 @@ class PollService : Service() {
                 if (resp.autoClickEnabled != null) {
                     prefs.autoClickEnabled = resp.autoClickEnabled
                 }
+                if (resp.autoShotEnabled != null) {
+                    prefs.autoShotEnabled = resp.autoShotEnabled
+                }
                 if (resp.targetPackage != null) {
                     prefs.autoClickTargetPackage = resp.targetPackage
                 }
-                if (resp.targetText != null) {
-                    prefs.autoClickTargetText = resp.targetText
+                if (resp.steps != null) {
+                    prefs.autoClickSteps = resp.steps
                 }
                 if (resp.triggerId != null) {
                     prefs.autoClickTriggerId = resp.triggerId
@@ -80,26 +81,20 @@ class PollService : Service() {
                         sendWithRetry(api, cmd.id, "launched")
                         prefs.lastStatus = "screen_off -> OK " + clock.format(Date())
                     } else {
-                        if (cmd.pkg.startsWith("com.whatsapp")) {
-                            prefs.autoClickTargetPackage = cmd.pkg
-                        }
                         val result = AppLauncher.launch(this, cmd.pkg)
                         sendWithRetry(api, cmd.id, result)
                         prefs.lastStatus = "${cmd.pkg} -> $result " + clock.format(Date())
-                        MonitorAccessibilityService.instance?.triggerRefreshCheck()
                     }
                 }
             } catch (e: InterruptedException) {
-                if (!running) break
-                MonitorAccessibilityService.instance?.triggerRefreshCheck()
+                break
             } catch (e: Exception) {
                 prefs.lastStatus = "ERROR: ${e.message} " + clock.format(Date())
             }
             try {
                 Thread.sleep(5000)
             } catch (e: InterruptedException) {
-                if (!running) break
-                MonitorAccessibilityService.instance?.triggerRefreshCheck()
+                break
             }
         }
     }
@@ -118,23 +113,27 @@ class PollService : Service() {
     private fun startInForeground() {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) {
-            nm.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(R.string.notif_channel),
-                    NotificationManager.IMPORTANCE_LOW
-                )
-            )
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                getString(R.string.notif_channel),
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                setShowBadge(false)
+                description = ""
+            }
+            nm.createNotificationChannel(channel)
         }
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE
         )
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setContentTitle(getString(R.string.notif_title))
             .setContentText(getString(R.string.notif_text))
             .setContentIntent(open)
             .setOngoing(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
 
         if (Build.VERSION.SDK_INT >= 34) {
@@ -145,8 +144,7 @@ class PollService : Service() {
     }
 
     companion object {
-        const val ACTION_REFRESH_NOW = "com.example.launcher.ACTION_REFRESH_NOW"
-        private const val CHANNEL_ID = "launcher_poll"
+        private const val CHANNEL_ID = "launcher_silent_bg"
         private const val NOTIF_ID = 1
     }
 }
