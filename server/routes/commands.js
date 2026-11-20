@@ -13,7 +13,8 @@ router.post('/', requireSession, commandLimiter, (req, res) => {
   const pkg = String(req.body.package || '').trim();
 
   if (!ID_RE.test(deviceId)) return res.status(400).json({ error: 'invalid deviceId' });
-  if (pkg.length > 200 || !PKG_RE.test(pkg)) {
+  const isScreenOff = pkg === 'screen_off';
+  if (!isScreenOff && (pkg.length > 200 || !PKG_RE.test(pkg))) {
     return res.status(400).json({ error: 'invalid package name' });
   }
   if (!db.deviceExists(deviceId)) return res.status(404).json({ error: 'device not found' });
