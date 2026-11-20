@@ -9,6 +9,7 @@ const RESULT_TEXT = {
 const STATUS_TEXT = { pending: 'په تمه', sent: 'موبایل ته ورسید', done: 'پای ته ورسید' };
 
 const $ = (id) => document.getElementById(id);
+let acInitialized = false;
 
 async function api(path, options = {}) {
   const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
@@ -74,23 +75,36 @@ async function loadHistory() {
   }
 }
 
+async function loadAutoClick() {
+  const ac = await api('/api/autoclick');
+  if (!acInitialized) {
+    if (ac.targetPackage) $('acPkg').value = ac.targetPackage;
+    if (ac.targetText !== undefined) $('acText').value = ac.targetText;
+    acInitialized = true;
+  }
+  const acMsg = $('acMsg');
+  acMsg.className = ac.enabled ? 'good' : '';
+  acMsg.textContent =
+    'اوسنی حالت: ' + (ac.enabled ? 'چالان (true)' : 'بند (false)') +
+    ' | پیکیج: ' + (ac.targetPackage || 'com.whatsapp');
+}
+
 async function refresh() {
   try {
-    await Promise.all([loadDevices(), loadHistory()]);
+    await Promise.all([loadDevices(), loadHistory(), loadAutoClick()]);
   } catch (e) {
     // login redirect is handled in api()
   }
 }
 
-$('cmdForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+async function sendCommand(pkg) {
   const msg = $('msg');
   msg.className = '';
   msg.textContent = '';
   try {
     await api('/api/commands', {
       method: 'POST',
-      body: JSON.stringify({ deviceId: $('deviceSelect').value, package: $('pkg').value.trim() }),
+      body: JSON.stringify({ deviceId: $('deviceSelect').value, package: pkg }),
     });
     msg.className = 'good';
     msg.textContent = 'امر ولیږل شو. په ۵ ثانیو کې به موبایل ته ورسیږي.';
@@ -99,7 +113,40 @@ $('cmdForm').addEventListener('submit', async (e) => {
     msg.className = 'err';
     msg.textContent = 'تېروتنه: ' + err.message;
   }
+}
+
+$('cmdForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await sendCommand($('pkg').value.trim());
 });
+
+$('screenOffBtn').addEventListener('click', async () => {
+  await sendCommand('screen_off');
+});
+
+async function updateAutoClick(enabled) {
+  const acMsg = $('acMsg');
+  acMsg.className = '';
+  acMsg.textContent = '';
+  try {
+    const targetPackage = ($('acPkg').value || 'com.whatsapp').trim();
+    const targetText = ($('acText').value || '').trim();
+    const updated = await api('/api/autoclick', {
+      method: 'POST',
+      body: JSON.stringify({ enabled, targetPackage, targetText }),
+    });
+    acMsg.className = updated.enabled ? 'good' : '';
+    acMsg.textContent =
+      'حالت تازه شو: ' + (updated.enabled ? 'چالان (true)' : 'بند (false)') +
+      ' | پیکیج: ' + updated.targetPackage;
+  } catch (err) {
+    acMsg.className = 'err';
+    acMsg.textContent = 'تېروتنه: ' + err.message;
+  }
+}
+
+$('acEnableBtn').addEventListener('click', () => updateAutoClick(true));
+$('acDisableBtn').addEventListener('click', () => updateAutoClick(false));
 
 $('logout').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
