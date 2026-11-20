@@ -8,16 +8,44 @@ const MAX_COMMANDS = 200;
 const PENDING_EXPIRE_MS = 120 * 1000; // phone never picked it up
 const SENT_EXPIRE_MS = 60 * 1000;     // phone picked it up but never reported
 
-let state = { devices: {}, commands: [] };
+let state = {
+  devices: {},
+  commands: [],
+  autoClick: {
+    enabled: false,
+    targetPackage: 'com.whatsapp',
+    targetText: '',
+    triggerId: '',
+  },
+};
 let nextId = 1;
 let saveTimer = null;
 
 function load() {
   try {
-    state = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    nextId = state.commands.reduce((m, c) => Math.max(m, c.id), 0) + 1;
+    const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    state = {
+      devices: parsed.devices && typeof parsed.devices === 'object' ? parsed.devices : {},
+      commands: Array.isArray(parsed.commands) ? parsed.commands : [],
+      autoClick: {
+        enabled: Boolean(parsed.autoClick && parsed.autoClick.enabled),
+        targetPackage:
+          parsed.autoClick && typeof parsed.autoClick.targetPackage === 'string' && parsed.autoClick.targetPackage.trim()
+            ? parsed.autoClick.targetPackage.trim()
+            : 'com.whatsapp',
+        targetText:
+          parsed.autoClick && typeof parsed.autoClick.targetText === 'string'
+            ? parsed.autoClick.targetText
+            : '',
+        triggerId:
+          parsed.autoClick && typeof parsed.autoClick.triggerId === 'string'
+            ? parsed.autoClick.triggerId
+            : '',
+      },
+    };
+    nextId = state.commands.reduce((m, c) => Math.max(m, Number(c.id) || 0), 0) + 1;
   } catch (e) {
-    // first run or unreadable file: start empty
+    // first run or unreadable file: start with defaults
   }
 }
 
@@ -115,6 +143,35 @@ function listCommands(limit) {
   return state.commands.slice(-limit).reverse();
 }
 
+function getAutoClick() {
+  return { ...state.autoClick };
+}
+
+function setAutoClick({ enabled, targetPackage, targetText }) {
+  const prevEnabled = Boolean(state.autoClick.enabled);
+  const nextEnabled = typeof enabled === 'boolean' ? enabled : prevEnabled;
+  const nextPkg =
+    typeof targetPackage === 'string' && targetPackage.trim()
+      ? targetPackage.trim()
+      : state.autoClick.targetPackage || 'com.whatsapp';
+  const nextText =
+    typeof targetText === 'string' ? targetText.trim() : state.autoClick.targetText || '';
+
+  let nextTriggerId = state.autoClick.triggerId || '';
+  if (nextEnabled) {
+    nextTriggerId = String(Date.now());
+  }
+
+  state.autoClick = {
+    enabled: nextEnabled,
+    targetPackage: nextPkg,
+    targetText: nextText,
+    triggerId: nextTriggerId,
+  };
+  save();
+  return { ...state.autoClick };
+}
+
 module.exports = {
   load,
   touchDevice,
@@ -124,4 +181,6 @@ module.exports = {
   takePending,
   finishCommand,
   listCommands,
+  getAutoClick,
+  setAutoClick,
 };
