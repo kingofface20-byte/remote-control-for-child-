@@ -13,17 +13,19 @@
     h2 { margin: 0 0 10px; font-size: 17px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; text-align: start; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-bottom: 10px; }
     select, input, button { padding: 8px 10px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
-    input { flex: 1; min-width: 180px; direction: ltr; }
+    input { flex: 1; min-width: 160px; direction: ltr; }
     button { background: #2563eb; color: #fff; border: 0; cursor: pointer; }
     button.warn { background: #dc2626; }
     button.sec { background: #4b5563; }
+    button.ok { background: #16a34a; }
     .ltr { direction: ltr; unicode-bidi: plaintext; }
     .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 6px; }
     .on { background: #16a34a; }
     .off { background: #9ca3af; }
-    #msg, #acMsg { margin-top: 8px; font-size: 14px; min-height: 18px; }
+    #msg, #acMsg, #shotMsg { margin-top: 8px; font-size: 14px; min-height: 18px; }
     .err { color: #b91c1c; }
     .good { color: #15803d; }
   </style>
@@ -46,12 +48,34 @@
     </section>
 
     <section>
-      <h2>اوتومات کلکر (واتساپ)</h2>
+      <h2>اوتومات عکس اخیستنه (هر ۲ ثانیې - جلا فیوچر)</h2>
       <div class="row">
-        <input id="acPkg" value="com.whatsapp" placeholder="د پیکیج نوم (com.whatsapp)">
-        <input id="acText" placeholder="د هدف متن یا چټ نوم (اختیاري)">
-        <button type="button" id="acEnableBtn">چالان (true)</button>
-        <button type="button" id="acDisableBtn" class="sec">بند (false)</button>
+        <button type="button" id="shotEnableBtn" class="ok">عکس اخیستنه چالان (true)</button>
+        <button type="button" id="shotDisableBtn" class="sec">عکس اخیستنه بند (false)</button>
+      </div>
+      <div id="shotMsg"></div>
+    </section>
+
+    <section>
+      <h2>عمومي اوتومات کلکر (تر ۱۰ پرله پسې مرحلو - جلا فیوچر)</h2>
+      <div class="row">
+        <input id="acPkg" value="com.whatsapp" placeholder="د هدف پیکیج نوم، بیلګه com.whatsapp">
+      </div>
+      <div class="steps-grid">
+        <input id="step1" placeholder="۱. لومړی کلک متن">
+        <input id="step2" placeholder="۲. دویم کلک متن">
+        <input id="step3" placeholder="۳. درېیم کلک متن">
+        <input id="step4" placeholder="۴. څلورم کلک متن">
+        <input id="step5" placeholder="۵. پنځم کلک متن">
+        <input id="step6" placeholder="۶. شپږم کلک متن">
+        <input id="step7" placeholder="۷. اووم کلک متن">
+        <input id="step8" placeholder="۸. اتم کلک متن">
+        <input id="step9" placeholder="۹. نهم کلک متن">
+        <input id="step10" placeholder="۱۰. لسم کلک متن">
+      </div>
+      <div class="row">
+        <button type="button" id="acEnableBtn" class="ok">کلکر چالان (true)</button>
+        <button type="button" id="acDisableBtn" class="sec">کلکر بند (false)</button>
       </div>
       <div id="acMsg"></div>
     </section>
