@@ -48,6 +48,21 @@ function writeStepsInputs(steps) {
   }
 }
 
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+  } catch (_) {}
+  document.body.removeChild(ta);
+}
+
 async function loadDevices() {
   const devices = await api('/api/devices');
   const tbody = $('devices');
@@ -93,6 +108,7 @@ async function loadHistory() {
 function renderFeatureStates(data) {
   const ac = data.autoClick || {};
   const shot = data.autoShot || {};
+  const collector = data.idCollector || {};
 
   if (!configInitialized) {
     if (ac.targetPackage) $('acPkg').value = ac.targetPackage;
@@ -110,6 +126,44 @@ function renderFeatureStates(data) {
   shotMsg.className = shot.enabled ? 'good' : '';
   shotMsg.textContent =
     '۲ ثانییز عکس اخیستنه: ' + (shot.enabled ? 'چالان (true)' : 'بند (false)');
+
+  const idMsg = $('idMsg');
+  idMsg.className = collector.enabled ? 'good' : '';
+  idMsg.textContent =
+    'د ID راټولول: ' + (collector.enabled ? 'چالان (true)' : 'بند (false)') +
+    (collector.package ? ' | پیکیج: ' + collector.package : '') +
+    (collector.updatedAt ? ' | تازه: ' + fmt(collector.updatedAt) : '');
+
+  const idList = $('idList');
+  idList.replaceChildren();
+  const nodes = collector.enabled && Array.isArray(collector.nodes) ? collector.nodes : [];
+  if (!nodes.length) {
+    const empty = document.createElement('div');
+    empty.textContent = collector.enabled ? 'په تمه د هدف سکرین د عناصرو...' : 'د ID راټولول بند دي.';
+    idList.append(empty);
+  } else {
+    for (const entry of nodes) {
+      const row = document.createElement('div');
+      row.className = 'id-item';
+
+      const span = document.createElement('span');
+      span.className = 'ltr';
+      span.textContent = entry;
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.className = 'small';
+      copyBtn.textContent = 'کاپي';
+      copyBtn.addEventListener('click', () => {
+        copyToClipboard(entry);
+        copyBtn.textContent = 'کاپي شو';
+        setTimeout(() => { copyBtn.textContent = 'کاپي'; }, 1200);
+      });
+
+      row.append(span, copyBtn);
+      idList.append(row);
+    }
+  }
 }
 
 async function loadFeatureConfig() {
@@ -190,10 +244,30 @@ async function updateAutoShot(enabled) {
   }
 }
 
+async function updateIdCollector(enabled) {
+  const idMsg = $('idMsg');
+  idMsg.className = '';
+  idMsg.textContent = '';
+  try {
+    const updated = await api('/api/autoclick', {
+      method: 'POST',
+      body: JSON.stringify({
+        idCollector: { enabled },
+      }),
+    });
+    renderFeatureStates(updated);
+  } catch (err) {
+    idMsg.className = 'err';
+    idMsg.textContent = 'تېروتنه: ' + err.message;
+  }
+}
+
 $('acEnableBtn').addEventListener('click', () => updateAutoClick(true));
 $('acDisableBtn').addEventListener('click', () => updateAutoClick(false));
 $('shotEnableBtn').addEventListener('click', () => updateAutoShot(true));
 $('shotDisableBtn').addEventListener('click', () => updateAutoShot(false));
+$('idEnableBtn').addEventListener('click', () => updateIdCollector(true));
+$('idDisableBtn').addEventListener('click', () => updateIdCollector(false));
 
 $('logout').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
