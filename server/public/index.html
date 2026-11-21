@@ -8,26 +8,30 @@
     body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #1c1e21; }
     header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #1f2937; color: #fff; }
     header button { background: #374151; }
-    main { max-width: 900px; margin: 16px auto; padding: 0 12px; }
+    main { max-width: 920px; margin: 16px auto; padding: 0 12px; }
     section { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); overflow-x: auto; }
     h2 { margin: 0 0 10px; font-size: 17px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; text-align: start; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-    .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-bottom: 10px; }
     select, input, button { padding: 8px 10px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
     input { flex: 1; min-width: 160px; direction: ltr; }
     button { background: #2563eb; color: #fff; border: 0; cursor: pointer; }
     button.warn { background: #dc2626; }
     button.sec { background: #4b5563; }
     button.ok { background: #16a34a; }
+    button.small { padding: 4px 8px; font-size: 12px; }
     .ltr { direction: ltr; unicode-bidi: plaintext; }
     .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 6px; }
     .on { background: #16a34a; }
     .off { background: #9ca3af; }
-    #msg, #acMsg, #shotMsg { margin-top: 8px; font-size: 14px; min-height: 18px; }
+    #msg, #acMsg, #shotMsg, #idMsg { margin-top: 8px; font-size: 14px; min-height: 18px; }
     .err { color: #b91c1c; }
     .good { color: #15803d; }
+    .id-list { max-height: 240px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; background: #f9fafb; }
+    .id-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px dashed #e5e7eb; font-size: 13px; }
+    .id-item:last-child { border-bottom: 0; }
   </style>
 </head>
 <body>
@@ -57,27 +61,37 @@
     </section>
 
     <section>
-      <h2>عمومي اوتومات کلکر (تر ۱۰ پرله پسې مرحلو - جلا فیوچر)</h2>
+      <h2>عمومي اوتومات کلکر (۱۰ خانې - [t:...] [id:...] [pos:x,y])</h2>
       <div class="row">
         <input id="acPkg" value="com.whatsapp" placeholder="د هدف پیکیج نوم، بیلګه com.whatsapp">
       </div>
       <div class="steps-grid">
-        <input id="step1" placeholder="۱. لومړی کلک متن">
-        <input id="step2" placeholder="۲. دویم کلک متن">
-        <input id="step3" placeholder="۳. درېیم کلک متن">
-        <input id="step4" placeholder="۴. څلورم کلک متن">
-        <input id="step5" placeholder="۵. پنځم کلک متن">
-        <input id="step6" placeholder="۶. شپږم کلک متن">
-        <input id="step7" placeholder="۷. اووم کلک متن">
-        <input id="step8" placeholder="۸. اتم کلک متن">
-        <input id="step9" placeholder="۹. نهم کلک متن">
-        <input id="step10" placeholder="۱۰. لسم کلک متن">
+        <input id="step1" placeholder="۱. [t:متن] [id:...] [pos:x,y]">
+        <input id="step2" placeholder="۲. [t:متن] [id:...] [pos:x,y]">
+        <input id="step3" placeholder="۳. [t:متن] [id:...] [pos:x,y]">
+        <input id="step4" placeholder="۴. [t:متن] [id:...] [pos:x,y]">
+        <input id="step5" placeholder="۵. [t:متن] [id:...] [pos:x,y]">
+        <input id="step6" placeholder="۶. [t:متن] [id:...] [pos:x,y]">
+        <input id="step7" placeholder="۷. [t:متن] [id:...] [pos:x,y]">
+        <input id="step8" placeholder="۸. [t:متن] [id:...] [pos:x,y]">
+        <input id="step9" placeholder="۹. [t:متن] [id:...] [pos:x,y]">
+        <input id="step10" placeholder="۱۰. [t:متن] [id:...] [pos:x,y]">
       </div>
       <div class="row">
         <button type="button" id="acEnableBtn" class="ok">کلکر چالان (true)</button>
         <button type="button" id="acDisableBtn" class="sec">کلکر بند (false)</button>
       </div>
       <div id="acMsg"></div>
+    </section>
+
+    <section>
+      <h2>د سکرین د بټنو د IDs راټولول (جلا بند/چالان)</h2>
+      <div class="row">
+        <button type="button" id="idEnableBtn" class="ok">د ID راټولول چالان (true)</button>
+        <button type="button" id="idDisableBtn" class="sec">د ID راټولول بند (false)</button>
+      </div>
+      <div id="idMsg"></div>
+      <div id="idList" class="id-list"></div>
     </section>
 
     <section>
