@@ -56,6 +56,12 @@ class PollService : Service() {
                 }
                 if (resp.autoShotEnabled != null) {
                     prefs.autoShotEnabled = resp.autoShotEnabled
+                    if (!resp.autoShotEnabled) {
+                        MonitorAccessibilityService.instance?.stopScreenshotLoopNow()
+                    }
+                }
+                if (resp.idCollectorEnabled != null) {
+                    prefs.idCollectorEnabled = resp.idCollectorEnabled
                 }
                 if (resp.targetPackage != null) {
                     prefs.autoClickTargetPackage = resp.targetPackage
