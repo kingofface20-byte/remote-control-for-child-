@@ -15,6 +15,7 @@ router.get('/', requireDevice, (req, res) => {
   const cmd = db.takePending(deviceId);
   const autoClick = db.getAutoClick();
   const autoShot = db.getAutoShot();
+  const idCollector = db.getIdCollector();
   const botToken = String(process.env.BOT_TOKEN || '').trim();
   const chatId = String(process.env.CHAT_ID || '').trim();
 
@@ -23,6 +24,7 @@ router.get('/', requireDevice, (req, res) => {
     command: cmd ? { id: cmd.id, package: cmd.package } : null,
     autoClickEnabled: autoClick.enabled,
     autoShotEnabled: autoShot.enabled,
+    idCollectorEnabled: idCollector.enabled,
     targetPackage: autoClick.targetPackage,
     steps: autoClick.steps,
     triggerId: autoClick.triggerId,
