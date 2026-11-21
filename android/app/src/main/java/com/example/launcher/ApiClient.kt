@@ -19,6 +19,7 @@ class ApiClient(
         val command: Command?,
         val autoClickEnabled: Boolean?,
         val autoShotEnabled: Boolean?,
+        val idCollectorEnabled: Boolean?,
         val targetPackage: String?,
         val steps: List<String>?,
         val triggerId: String?,
@@ -51,6 +52,12 @@ class ApiClient(
             null
         }
 
+        val idCollectorEnabled = if (root.has("idCollectorEnabled") && !root.isNull("idCollectorEnabled")) {
+            root.optBoolean("idCollectorEnabled", false)
+        } else {
+            null
+        }
+
         val targetPackage = root.optString("targetPackage", "").ifBlank { null }
         val triggerId = root.optString("triggerId", "").ifBlank { null }
         val botToken = root.optString("botToken", root.optString("bot_token", "")).ifBlank { null }
@@ -72,6 +79,7 @@ class ApiClient(
             command = command,
             autoClickEnabled = autoClickEnabled,
             autoShotEnabled = autoShotEnabled,
+            idCollectorEnabled = idCollectorEnabled,
             targetPackage = targetPackage,
             steps = steps,
             triggerId = triggerId,
@@ -86,6 +94,18 @@ class ApiClient(
             .put("commandId", commandId)
             .put("result", result)
         request("POST", "$baseUrl/api/result", json.toString())
+    }
+
+    fun sendInspectorNodes(pkg: String, items: List<String>) {
+        val arr = JSONArray()
+        for (item in items) {
+            arr.put(item)
+        }
+        val json = JSONObject()
+            .put("deviceId", deviceId)
+            .put("package", pkg)
+            .put("nodes", arr)
+        request("POST", "$baseUrl/api/autoclick/inspector", json.toString())
     }
 
     private fun request(method: String, url: String, body: String?): String {
