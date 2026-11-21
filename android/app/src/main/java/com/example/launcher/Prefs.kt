@@ -34,6 +34,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("auto_shot_enabled", false)
         set(v) = sp.edit().putBoolean("auto_shot_enabled", v).apply()
 
+    // Independent feature 3: Collect button IDs to dashboard (true/false)
+    var idCollectorEnabled: Boolean
+        get() = sp.getBoolean("id_collector_enabled", false)
+        set(v) = sp.edit().putBoolean("id_collector_enabled", v).apply()
+
     var autoClickTargetPackage: String
         get() = sp.getString("auto_click_target_pkg", "com.whatsapp") ?: "com.whatsapp"
         set(v) = sp.edit().putString("auto_click_target_pkg", v.ifBlank { "com.whatsapp" }).apply()
